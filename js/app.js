@@ -68,11 +68,23 @@ function showToast(msg, type = '') {
 
 // ====== 音频播放（本地真人音频文件） ======
 
-/** 音频缓存：避免每次都创建新的 Audio 对象 */
+/** 音频预加载：页面加载时预先创建 Audio 对象并加载 */
 const audioCache = {};
+
+/** 预加载所有音频文件 */
+function preloadAudio() {
+  [...VOWEL_DATA, ...CONSONANT_DATA].forEach(item => {
+    if (item.audio && !audioCache[item.audio]) {
+      const a = new Audio(item.audio);
+      a.preload = 'auto';
+      audioCache[item.audio] = a;
+    }
+  });
+}
 
 /**
  * 播放本地音标音频文件
+ * 每次创建新的 Audio 对象，避免复用导致的播放失败
  * @param {string} audioPath - 音频文件路径，如 'audio/vowel-i-long.mp3'
  */
 function playPhoneticAudio(audioPath) {
@@ -83,20 +95,24 @@ function playPhoneticAudio(audioPath) {
     window.speechSynthesis.cancel();
   }
 
-  // 从缓存取或新建
-  if (!audioCache[audioPath]) {
-    audioCache[audioPath] = new Audio(audioPath);
-  }
-  const audio = audioCache[audioPath];
+  // 每次新建 Audio 对象，避免复用导致的 currentTime 重置失败
+  const audio = new Audio(audioPath);
 
   // 应用语速设置（playbackRate: 0.5 ~ 2.0）
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
 
-  // 停止当前播放并重新开始
-  audio.currentTime = 0;
+  // 播放
   audio.play().catch(() => {
     // 播放失败时静默处理（如浏览器自动播放限制）
+  });
+
+  // 播放结束后自动释放引用
+  audio.addEventListener('ended', () => {
+    audio.src = '';
+  });
+  audio.addEventListener('error', () => {
+    // 音频加载失败时静默处理
   });
 }
 
@@ -134,9 +150,9 @@ function speakChinese(text) {
 }
 
 /**
- * 配对成功时：先播放音标音频，再朗读中文口诀
+ * 配对成功时：先播放音标音频，再朗读口诀+后缀
  * @param {string} audioPath - 音标音频文件路径
- * @param {string} mnText    - 中文口诀文本
+ * @param {string} mnText    - 口诀文本（含后缀）
  */
 function playPairAudio(audioPath, mnText) {
   // 停止当前所有播放
@@ -148,18 +164,21 @@ function playPairAudio(audioPath, mnText) {
     return;
   }
 
-  if (!audioCache[audioPath]) {
-    audioCache[audioPath] = new Audio(audioPath);
-  }
-  const audio = audioCache[audioPath];
+  // 每次新建 Audio 对象
+  const audio = new Audio(audioPath);
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
-  audio.currentTime = 0;
 
-  // 音频播放结束后，朗读中文口诀
-  audio.onended = () => {
+  // 音频播放结束后，朗读口诀+后缀
+  audio.addEventListener('ended', () => {
+    audio.src = '';
     speakChinese(mnText);
-  };
+  });
+
+  // 播放失败时直接朗读中文
+  audio.addEventListener('error', () => {
+    speakChinese(mnText);
+  });
 
   audio.play().catch(() => {
     // 播放失败时直接朗读中文
@@ -235,9 +254,10 @@ function loadLevel() {
     cardList.push({
       type: 'mn',
       key: item.phon,
-      text: item.mn,
-      audio: item.audio,   // 本地音频文件路径
-      mn: item.mn,
+      text: item.mn,                    // 卡片只显示口诀
+      audio: item.audio,
+      mn: item.mn,                      // 纯中文口诀
+      tts: item.mn + ' ' + item.suffix, // TTS 朗读：口诀 + 三连后缀
       hidden: false
     });
   });
@@ -292,8 +312,8 @@ function handleCardClick(idx) {
     // 点击发音模式
     if (getPronMode() === 'click') {
       if (cur.type === 'mn') {
-        // 口诀卡片 → 朗读中文文字
-        speakChinese(cur.text);
+        // 口诀卡片 → 朗读口诀+后缀
+        speakChinese(cur.tts || cur.text);
       } else {
         // 音标卡片 → 播放本地真人音频
         playPhoneticAudio(cur.audio);
@@ -325,9 +345,9 @@ function handleCardClick(idx) {
     cards[curIdx].classList.add('matched');
     cards[prevIdx].classList.remove('selected');
 
-    // 配对发音模式：先播音标音频，再读中文口诀
+    // 配对发音模式：先播音标音频，再读口诀+后缀
     if (getPronMode() === 'match') {
-      playPairAudio(cur.audio, cur.mn);
+      playPairAudio(cur.audio, cur.tts || cur.mn);
     }
 
     showToast('✅ 配对成功！', 'success');
@@ -508,4 +528,5 @@ document.getElementById('clearErrors').addEventListener('click', () => {
 });
 
 // ====== 启动 ======
+preloadAudio();  // 预加载音频文件
 loadLevel();
