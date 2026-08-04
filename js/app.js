@@ -68,23 +68,27 @@ function showToast(msg, type = '') {
 
 // ====== 音频播放（本地真人音频文件） ======
 
-/** 音频预加载：页面加载时预先创建 Audio 对象并加载 */
+/**
+ * 音频缓存：预加载所有音频到内存
+ * 播放时用 cloneNode() 从缓存复制，秒播且互不干扰
+ */
 const audioCache = {};
 
-/** 预加载所有音频文件 */
+/** 预加载所有音频文件到缓存 */
 function preloadAudio() {
   [...VOWEL_DATA, ...CONSONANT_DATA].forEach(item => {
     if (item.audio && !audioCache[item.audio]) {
-      const a = new Audio(item.audio);
+      const a = new Audio();
+      a.src = item.audio;
       a.preload = 'auto';
+      a.load();  // 触发加载
       audioCache[item.audio] = a;
     }
   });
 }
 
 /**
- * 播放本地音标音频文件
- * 每次创建新的 Audio 对象，避免复用导致的播放失败
+ * 播放本地音标音频文件（从缓存克隆，秒播）
  * @param {string} audioPath - 音频文件路径，如 'audio/vowel-i-long.mp3'
  */
 function playPhoneticAudio(audioPath) {
@@ -95,25 +99,15 @@ function playPhoneticAudio(audioPath) {
     window.speechSynthesis.cancel();
   }
 
-  // 每次新建 Audio 对象，避免复用导致的 currentTime 重置失败
-  const audio = new Audio(audioPath);
+  // 从缓存克隆 Audio 节点（已预加载，无需重新网络请求）
+  const cached = audioCache[audioPath];
+  const audio = cached ? cached.cloneNode() : new Audio(audioPath);
 
   // 应用语速设置（playbackRate: 0.5 ~ 2.0）
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
 
-  // 播放
-  audio.play().catch(() => {
-    // 播放失败时静默处理（如浏览器自动播放限制）
-  });
-
-  // 播放结束后自动释放引用
-  audio.addEventListener('ended', () => {
-    audio.src = '';
-  });
-  audio.addEventListener('error', () => {
-    // 音频加载失败时静默处理
-  });
+  audio.play().catch(() => {});
 }
 
 // ====== 中文语音合成（Web Speech API） ======
@@ -159,19 +153,18 @@ function playPairAudio(audioPath, mnText) {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
   if (!audioPath) {
-    // 没有音频文件则直接朗读中文
     speakChinese(mnText);
     return;
   }
 
-  // 每次新建 Audio 对象
-  const audio = new Audio(audioPath);
+  // 从缓存克隆 Audio 节点（已预加载，秒播）
+  const cached = audioCache[audioPath];
+  const audio = cached ? cached.cloneNode() : new Audio(audioPath);
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
 
   // 音频播放结束后，朗读口诀+后缀
   audio.addEventListener('ended', () => {
-    audio.src = '';
     speakChinese(mnText);
   });
 
@@ -181,7 +174,6 @@ function playPairAudio(audioPath, mnText) {
   });
 
   audio.play().catch(() => {
-    // 播放失败时直接朗读中文
     speakChinese(mnText);
   });
 }
