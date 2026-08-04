@@ -104,6 +104,11 @@ function initSettings() {
     document.getElementById('settingsModal').classList.remove('show');
   });
 
+  // 右上角 X → 关闭弹窗
+  document.getElementById('closeSettingsX').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.remove('show');
+  });
+
   // 主题色选择
   document.querySelectorAll('.color-option').forEach(option => {
     option.addEventListener('click', () => {
