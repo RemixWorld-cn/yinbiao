@@ -67,43 +67,129 @@ function showToast(msg, type = '') {
 
 // ====== 语音合成（Web Speech API） ======
 
-/** 朗读英文单词 */
-function speak(word) {
+/** 检测文本是否包含中文 */
+function isChinese(text) {
+  return /[\u4e00-\u9fff]/.test(text);
+}
+
+/**
+ * 朗读文本（自动识别中英文）
+ * @param {string} text - 要朗读的文本
+ * @param {string} cardType - 卡片类型 'phon' | 'mn'，用于选择语音
+ */
+function speak(text, cardType) {
   if (!('speechSynthesis' in window)) return;
   // 取消正在进行的朗读
   window.speechSynthesis.cancel();
 
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang = 'en-US';
-  utter.rate = parseFloat(document.getElementById('speechRate').value);
+  const utter = new SpeechSynthesisUtterance(text);
+  const rate = parseFloat(document.getElementById('speechRate').value);
+  utter.rate = rate;
 
-  // 选择朗读人
+  const voices = window.speechSynthesis.getVoices();
   const voiceName = document.getElementById('voiceSelect').value;
-  if (voiceName) {
-    const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(v => v.name === voiceName);
-    if (v) utter.voice = v;
+  const selectedVoice = voiceName ? voices.find(v => v.name === voiceName) : null;
+
+  // 根据卡片类型和文本内容选择语言
+  if (cardType === 'mn' || isChinese(text)) {
+    // 口诀卡片 → 中文朗读
+    utter.lang = 'zh-CN';
+    // 用户选的语音是中文就用它，否则自动找中文语音
+    if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('zh')) {
+      utter.voice = selectedVoice;
+    } else {
+      const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
+      if (zhVoice) utter.voice = zhVoice;
+    }
+  } else {
+    // 音标卡片 → 英文朗读示例单词
+    utter.lang = 'en-US';
+    // 用户选的语音是英文就用它，否则自动找英文语音
+    if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('en')) {
+      utter.voice = selectedVoice;
+    } else {
+      const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
+      if (enVoice) utter.voice = enVoice;
+    }
   }
 
   window.speechSynthesis.speak(utter);
 }
 
-/** 加载可用语音列表 */
+/** 配对成功时依次朗读英文单词 + 中文口诀 */
+function speakPair(word, mnText) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  const rate = parseFloat(document.getElementById('speechRate').value);
+  const voices = window.speechSynthesis.getVoices();
+  const voiceName = document.getElementById('voiceSelect').value;
+  const selectedVoice = voiceName ? voices.find(v => v.name === voiceName) : null;
+
+  // 先读英文单词
+  const enUtter = new SpeechSynthesisUtterance(word);
+  enUtter.lang = 'en-US';
+  enUtter.rate = rate;
+  // 用户选的语音是英文就用它，否则自动找英文语音
+  if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('en')) {
+    enUtter.voice = selectedVoice;
+  } else {
+    const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
+    if (enVoice) enUtter.voice = enVoice;
+  }
+
+  // 再读中文口诀
+  const zhUtter = new SpeechSynthesisUtterance(mnText);
+  zhUtter.lang = 'zh-CN';
+  zhUtter.rate = rate;
+  // 用户选的语音是中文就用它，否则自动找中文语音
+  if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('zh')) {
+    zhUtter.voice = selectedVoice;
+  } else {
+    const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
+    if (zhVoice) zhUtter.voice = zhVoice;
+  }
+
+  // 依次排队朗读
+  window.speechSynthesis.speak(enUtter);
+  window.speechSynthesis.speak(zhUtter);
+}
+
+/** 加载可用语音列表（中文 + 英文） */
 function loadVoices() {
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
   const select = document.getElementById('voiceSelect');
   // 保留"默认发音"选项
-  select.innerHTML = '<option value="">默认发音</option>';
+  select.innerHTML = '<option value="">默认发音（自动中英文）</option>';
 
-  // 筛选英语语音
+  // 中文语音
+  const zhVoices = voices.filter(v => v.lang && v.lang.startsWith('zh'));
+  if (zhVoices.length > 0) {
+    const zhGroup = document.createElement('optgroup');
+    zhGroup.label = '中文语音';
+    zhVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      zhGroup.appendChild(opt);
+    });
+    select.appendChild(zhGroup);
+  }
+
+  // 英文语音
   const enVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
-  enVoices.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.name;
-    opt.textContent = `${v.name} (${v.lang})`;
-    select.appendChild(opt);
-  });
+  if (enVoices.length > 0) {
+    const enGroup = document.createElement('optgroup');
+    enGroup.label = '英文语音';
+    enVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      enGroup.appendChild(opt);
+    });
+    select.appendChild(enGroup);
+  }
 }
 
 // 语音列表可能异步加载
@@ -200,9 +286,13 @@ function handleCardClick(idx) {
   // 没有选中卡片 → 选中当前卡片
   if (selectItem === null) {
     selectItem = { idx, data: cur };
-    // 点击发音模式
+    // 点击发音模式：音标卡读英文单词，口诀卡读中文文字
     if (getPronMode() === 'click') {
-      speak(cur.word);
+      if (cur.type === 'mn') {
+        speak(cur.text, 'mn');   // 朗读口诀中文
+      } else {
+        speak(cur.word, 'phon'); // 朗读英文示例单词
+      }
     }
     renderBoard();
     return;
@@ -230,9 +320,9 @@ function handleCardClick(idx) {
     cards[curIdx].classList.add('matched');
     cards[prevIdx].classList.remove('selected');
 
-    // 配对发音模式
+    // 配对发音模式：依次朗读英文单词 + 中文口诀
     if (getPronMode() === 'match') {
-      speak(cur.word);
+      speakPair(cur.word, cur.type === 'mn' ? cur.text : prev.text);
     }
 
     showToast('✅ 配对成功！', 'success');
