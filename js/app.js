@@ -28,6 +28,117 @@ const errorModal   = document.getElementById('errorModal');
 const toastDom     = document.getElementById('toast');
 const pauseBtn     = document.getElementById('pauseBtn');
 
+// ====== 配置管理（localStorage 持久化） ======
+
+const CONFIG_KEY = 'ipaGameConfig';
+
+/** 加载已保存的配置 */
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/** 保存配置（合并写入） */
+function saveConfig(partial) {
+  try {
+    const current = loadConfig();
+    Object.assign(current, partial);
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(current));
+  } catch (e) {}
+}
+
+/** 应用主题色到 body */
+function applyTheme(theme) {
+  document.body.className = '';
+  document.body.classList.add('theme-' + (theme || 'pink'));
+}
+
+/** 保存顶部设置栏的当前值 */
+function saveTopBarSettings() {
+  saveConfig({
+    mode:       currentMode,
+    pairCount:  document.getElementById('pairCount').value,
+    pronMode:   document.getElementById('pronMode').value,
+    speechRate: document.getElementById('speechRate').value,
+    voiceSelect:document.getElementById('voiceSelect').value
+  });
+}
+
+/** 从存储恢复顶部设置栏的值 */
+function loadTopBarSettings() {
+  const config = loadConfig();
+  if (config.pairCount)   document.getElementById('pairCount').value   = config.pairCount;
+  if (config.pronMode)    document.getElementById('pronMode').value    = config.pronMode;
+  if (config.speechRate)  document.getElementById('speechRate').value  = config.speechRate;
+  if (config.voiceSelect) document.getElementById('voiceSelect').value = config.voiceSelect;
+  if (config.mode) {
+    currentMode = config.mode;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === config.mode);
+    });
+  }
+}
+
+/** 初始化设置面板 */
+function initSettings() {
+  const config = loadConfig();
+
+  // 应用已保存的主题
+  const theme = config.theme || 'pink';
+  applyTheme(theme);
+  document.querySelectorAll('.color-option').forEach(o => {
+    o.classList.toggle('active', o.dataset.theme === theme);
+  });
+
+  // 设置图标 → 打开弹窗
+  document.getElementById('settingsIcon').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.add('show');
+  });
+
+  // 完成按钮 → 关闭弹窗
+  document.getElementById('closeSettings').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.remove('show');
+  });
+
+  // 主题色选择
+  document.querySelectorAll('.color-option').forEach(option => {
+    option.addEventListener('click', () => {
+      document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+      option.classList.add('active');
+      const t = option.dataset.theme;
+      applyTheme(t);
+      saveConfig({ theme: t });
+      showToast('🎨 主题已切换为' + (t === 'pink' ? '粉色' : t === 'blue' ? '蓝色' : t === 'yellow' ? '黄色' : '绿色'), 'success');
+    });
+  });
+
+  // 音频测试按钮
+  document.getElementById('testAudioBtn').addEventListener('click', () => {
+    playPhoneticAudio('audio/vowel-i-long.mp3');
+    showToast('🔊 正在播放测试音频', 'success');
+  });
+
+  // 重置配置按钮
+  document.getElementById('resetConfigBtn').addEventListener('click', () => {
+    if (confirm('确定要重置所有配置吗？\n\n将清除：主题颜色、关卡模式、发音方式、语速、朗读人等所有设置。\n重置后页面会自动刷新。')) {
+      localStorage.removeItem(CONFIG_KEY);
+      showToast('✅ 已重置所有配置', 'success');
+      setTimeout(() => location.reload(), 1200);
+    }
+  });
+
+  // 点击遮罩关闭设置弹窗
+  document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settingsModal')) {
+      document.getElementById('settingsModal').classList.remove('show');
+    }
+  });
+}
+
 // ====== 工具函数 ======
 
 /** 获取当前模式的数据源 */
@@ -470,13 +581,18 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.classList.add('active');
     currentMode = btn.dataset.mode;
     errorMap = {};  // 切换模式清空错题
+    saveTopBarSettings();
     loadLevel();
   });
 });
 
 // 设置变更时重新加载
-document.getElementById('pairCount').addEventListener('change', () => loadLevel());
+document.getElementById('pairCount').addEventListener('change', () => {
+  saveTopBarSettings();
+  loadLevel();
+});
 document.getElementById('pronMode').addEventListener('change', () => {
+  saveTopBarSettings();
   if (getPronMode() === 'match') {
     showToast('🔊 配对成功后自动发音', 'success');
   } else if (getPronMode() === 'click') {
@@ -484,6 +600,16 @@ document.getElementById('pronMode').addEventListener('change', () => {
   } else {
     showToast('🔇 已关闭发音', '');
   }
+});
+
+// 语速变更时保存
+document.getElementById('speechRate').addEventListener('change', () => {
+  saveTopBarSettings();
+});
+
+// 朗读人变更时保存
+document.getElementById('voiceSelect').addEventListener('change', () => {
+  saveTopBarSettings();
 });
 
 // 暂停/继续
@@ -513,12 +639,14 @@ document.getElementById('clearErrors').addEventListener('click', () => {
 });
 
 // 点击遮罩关闭弹窗
-[winModal, errorModal].forEach(modal => {
+[winModal, errorModal, document.getElementById('settingsModal')].forEach(modal => {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.remove('show');
   });
 });
 
 // ====== 启动 ======
-preloadAudio();  // 预加载音频文件
+initSettings();       // 初始化设置面板（应用主题色等）
+loadTopBarSettings(); // 恢复顶部设置栏的值
+preloadAudio();       // 预加载音频文件
 loadLevel();

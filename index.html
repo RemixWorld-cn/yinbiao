@@ -17,6 +17,7 @@
       <span>耗时：<b id="timer">0</b>秒</span>
       <span>进度：<b id="progress">0 / 0</b></span>
     </div>
+    <div class="settings-icon" id="settingsIcon" title="点击打开设置">⚙️</div>
   </header>
 
   <!-- ====== 进度条 ====== -->
@@ -107,6 +108,64 @@
     <div class="btn-row">
       <button id="clearErrors" class="btn-secondary">清空错题</button>
       <button id="closeError" class="btn-primary">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 设置弹窗 ====== -->
+<div class="modal" id="settingsModal">
+  <div class="modal-box">
+    <h2>⚙️ 设置</h2>
+
+    <!-- 音频测试 -->
+    <div class="setting-item">
+      <h4>🔊 音频测试</h4>
+      <div class="setting-desc">
+        点击下方按钮可以播放一段测试音频，用于检查浏览器是否能正常播放音标发音。<br>
+        <b>用途：</b>如果点击卡片时听不到声音，可先点此按钮排查是否为音频加载问题。
+      </div>
+      <button id="testAudioBtn" class="btn-primary">▶ 播放测试音频</button>
+    </div>
+
+    <!-- 主题颜色 -->
+    <div class="setting-item">
+      <h4>🎨 主题颜色</h4>
+      <div class="setting-desc">
+        选择你喜欢的主题色，背景和小圆点都会跟着变化。<br>
+        <b>用途：</b>切换不同配色风格，让学习更有趣。选择后会自动保存，下次打开依然生效。
+      </div>
+      <div class="color-options">
+        <div class="color-option" data-theme="pink">
+          <div class="color-circle" data-theme="pink"></div>
+          <span class="color-label">粉色</span>
+        </div>
+        <div class="color-option" data-theme="blue">
+          <div class="color-circle" data-theme="blue"></div>
+          <span class="color-label">蓝色</span>
+        </div>
+        <div class="color-option" data-theme="yellow">
+          <div class="color-circle" data-theme="yellow"></div>
+          <span class="color-label">黄色</span>
+        </div>
+        <div class="color-option" data-theme="green">
+          <div class="color-circle" data-theme="green"></div>
+          <span class="color-label">绿色</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重置配置 -->
+    <div class="setting-item">
+      <h4>🗑️ 重置配置</h4>
+      <div class="setting-desc">
+        点击后清除浏览器中保存的所有配置（包括主题颜色、关卡模式、发音方式、语速、朗读人等），恢复为默认设置。<br>
+        <b>用途：</b>当设置混乱或想恢复初始状态时使用。重置后页面会自动刷新。
+      </div>
+      <button id="resetConfigBtn" class="btn-danger">重置所有配置</button>
+    </div>
+
+    <div class="btn-row">
+      <button id="closeSettings" class="btn-primary">完成</button>
     </div>
   </div>
 </div>
