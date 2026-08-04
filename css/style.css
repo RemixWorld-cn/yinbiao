@@ -451,6 +451,23 @@ button:active{transform:scale(0.96);}
 }
 .btn-danger:hover{background:#e03131;}
 
+/* 图片预览弹窗 */
+#imagePreviewModal .modal-box{
+  position:relative;
+}
+#imagePreviewContainer img{
+  width:100%;max-width:100%;
+  border-radius:10px;
+  border:1px solid #f0f0f0;
+  -webkit-touch-callout:default;
+  -webkit-user-select:auto;
+  user-select:auto;
+  pointer-events:auto;
+}
+#imagePreviewContainer img:hover{
+  cursor:grab;
+}
+
 /* ====== Toast 提示 ====== */
 #toast{
   position:fixed;top:50%;left:50%;

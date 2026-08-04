@@ -789,13 +789,31 @@ function downloadErrorReport() {
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('🎈 国际音标对对碰 — 常错音标统计报告', canvasW / 2, canvasH - 20);
 
-  // 下载
-  const link = document.createElement('a');
-  link.download = `常错音标报告_${dateStr}_${timeStr.replace(':','')}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  const dataURL = canvas.toDataURL('image/png');
+  const fileName = `常错音标报告_${dateStr}_${timeStr.replace(':','')}.png`;
 
-  showToast('📷 报告已生成并下载', 'success');
+  // 检测是否为移动设备
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    // 移动端：弹出图片预览，提示长按保存到相册
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = `<img src="${dataURL}" alt="常错音标报告" />`;
+
+    // 存储数据供"下载图片"按钮使用
+    window._lastReportDataURL = dataURL;
+    window._lastReportFileName = fileName;
+
+    document.getElementById('imagePreviewModal').classList.add('show');
+    showToast('📷 长按图片可保存到相册', 'success');
+  } else {
+    // 桌面端：直接下载
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = dataURL;
+    link.click();
+    showToast('📷 报告已保存到下载文件夹', 'success');
+  }
 }
 
 // ====== 事件绑定 ======
@@ -891,10 +909,34 @@ document.getElementById('clearErrors').addEventListener('click', () => {
 });
 
 // 点击遮罩关闭弹窗
-[winModal, errorModal, document.getElementById('settingsModal')].forEach(modal => {
+[
+  winModal,
+  errorModal,
+  document.getElementById('settingsModal'),
+  document.getElementById('imagePreviewModal')
+].forEach(modal => {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.remove('show');
   });
+});
+
+// 图片预览弹窗 — 关闭按钮
+document.getElementById('closeImagePreview').addEventListener('click', () => {
+  document.getElementById('imagePreviewModal').classList.remove('show');
+});
+document.getElementById('closeImagePreviewBtn').addEventListener('click', () => {
+  document.getElementById('imagePreviewModal').classList.remove('show');
+});
+
+// 图片预览弹窗 — 下载图片按钮（备用方案）
+document.getElementById('downloadImageBtn').addEventListener('click', () => {
+  if (window._lastReportDataURL) {
+    const link = document.createElement('a');
+    link.download = window._lastReportFileName || '常错音标报告.png';
+    link.href = window._lastReportDataURL;
+    link.click();
+    showToast('📷 图片已下载，请在下载文件夹中查看', 'success');
+  }
 });
 
 // ====== 启动 ======

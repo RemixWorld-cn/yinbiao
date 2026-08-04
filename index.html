@@ -205,6 +205,20 @@
 <!-- ====== Toast 提示 ====== -->
 <div id="toast"></div>
 
+<!-- ====== 图片预览弹窗（移动端长按保存到相册） ====== -->
+<div class="modal" id="imagePreviewModal">
+  <div class="modal-box" style="padding:20px;max-width:95vw;">
+    <span class="modal-close" id="closeImagePreview">✕</span>
+    <h3>📷 长按图片保存到相册</h3>
+    <div id="imagePreviewContainer" style="margin:12px 0;max-height:60vh;overflow-y:auto;"></div>
+    <div class="btn-row">
+      <button id="downloadImageBtn" class="btn-primary">下载图片</button>
+      <button id="closeImagePreviewBtn" class="btn-secondary">关闭</button>
+    </div>
+    <p class="modal-hint">💡 长按上方图片，选择「保存到相册」即可</p>
+  </div>
+</div>
+
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 </body>
