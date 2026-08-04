@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎈国际音标对对碰🧸</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ====== 头部 ====== -->
+  <header>
+    <h1>🎈国际音标对对碰🧸</h1>
+    <div class="stats">
+      <span>得分：<b id="score">0</b></span>
+      <span>耗时：<b id="timer">0</b>秒</span>
+      <span>进度：<b id="progress">0 / 0</b></span>
+    </div>
+  </header>
+
+  <!-- ====== 进度条 ====== -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- ====== 设置栏（多个选项） ====== -->
+  <div class="settings-bar">
+    <div class="setting-group">
+      <label>音标对数</label>
+      <select id="pairCount">
+        <option value="5">5对</option>
+        <option value="10" selected>10对</option>
+        <option value="15">15对</option>
+        <option value="all">全部</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>发音</label>
+      <select id="pronMode">
+        <option value="click">点击发音</option>
+        <option value="match">配对发音</option>
+        <option value="none">不发音</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>语速</label>
+      <select id="speechRate">
+        <option value="0.5">0.5倍</option>
+        <option value="0.75">0.75倍</option>
+        <option value="1" selected>1倍</option>
+        <option value="1.25">1.25倍</option>
+        <option value="1.5">1.5倍</option>
+        <option value="2">2倍</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>朗读人</label>
+      <select id="voiceSelect">
+        <option value="">默认发音</option>
+      </select>
+    </div>
+    <button id="showErrorBtn" class="btn-error">常错音标</button>
+  </div>
+
+  <!-- ====== 模式切换 ====== -->
+  <div class="mode-bar">
+    <button class="mode-btn active" data-mode="vowel">元音关卡(20)</button>
+    <button class="mode-btn" data-mode="consonant">辅音关卡(28)</button>
+    <button class="mode-btn" data-mode="all">全部48音标</button>
+  </div>
+
+  <!-- ====== 控制栏 ====== -->
+  <div class="control-bar">
+    <button id="pauseBtn" class="btn-pause">暂停计时</button>
+    <button id="resetBtn" class="btn-reset">重新开始</button>
+  </div>
+
+  <!-- ====== 信息面板 ====== -->
+  <div class="info-panel">
+    💡玩法：点一张【音标卡片】，再点对应的【口诀卡片】，匹配成功两张消除并朗读发音；匹配失败显示红色提示抖动，记入常错音标。
+  </div>
+
+  <!-- ====== 游戏面板 ====== -->
+  <div id="board"></div>
+
+</div>
+
+<!-- ====== 通关弹窗 ====== -->
+<div class="modal" id="winModal">
+  <div class="modal-box">
+    <h2>🎉恭喜通关！</h2>
+    <p>用时：<b id="winTime" style="color:#d64878;font-size:20px;">0</b> 秒</p>
+    <p>得分：<b id="winScore" style="color:#d64878;font-size:20px;">0</b> 分</p>
+    <p id="winErrorHint" style="color:#999;font-size:13px;"></p>
+    <div class="btn-row">
+      <button id="closeWin" class="btn-primary">再来一局</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 常错音标弹窗 ====== -->
+<div class="modal" id="errorModal">
+  <div class="modal-box" style="min-width:360px;">
+    <h3>📋常错音标统计</h3>
+    <div id="errorList"></div>
+    <div class="btn-row">
+      <button id="clearErrors" class="btn-secondary">清空错题</button>
+      <button id="closeError" class="btn-primary">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Toast 提示 ====== -->
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
