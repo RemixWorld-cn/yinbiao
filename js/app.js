@@ -290,6 +290,7 @@ function showToast(msg, type = '') {
 /**
  * 音频缓存：预加载所有音频到内存
  * 播放时用 cloneNode() 从缓存复制，秒播且互不干扰
+ * 远程 .ogg 音频加载失败时自动从缓存移除，播放时走 TTS 回退
  */
 const audioCache = {};
 
@@ -300,6 +301,10 @@ function preloadAudio() {
       const a = new Audio();
       a.src = item.audio;
       a.preload = 'auto';
+      // 远程音频加载失败时从缓存移除，播放时自动走 TTS 回退
+      a.addEventListener('error', () => {
+        delete audioCache[item.audio];
+      });
       a.load();  // 触发加载
       audioCache[item.audio] = a;
     }
@@ -307,26 +312,61 @@ function preloadAudio() {
 }
 
 /**
- * 播放本地音标音频文件（从缓存克隆，秒播）
- * @param {string} audioPath - 音频文件路径，如 'audio/vowel-i-long.mp3'
+ * 播放音标音频文件（从缓存克隆，秒播）
+ * 音频加载失败时，用 TTS 朗读英文示例单词作为回退
+ * @param {string} audioPath - 音频文件路径
+ * @param {string} [fallbackWord] - 英文示例单词（音频失败时 TTS 朗读）
  */
-function playPhoneticAudio(audioPath) {
-  if (!audioPath) return;
+function playPhoneticAudio(audioPath, fallbackWord) {
+  if (!audioPath) {
+    if (fallbackWord) speakEnglishWord(fallbackWord);
+    return;
+  }
 
   // 停止正在播放的 TTS 中文朗读
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
 
-  // 从缓存克隆 Audio 节点（已预加载，无需重新网络请求）
   const cached = audioCache[audioPath];
-  const audio = cached ? cached.cloneNode() : new Audio(audioPath);
+
+  // 缓存不存在（远程音频预加载失败已移除）→ 直接走 TTS 回退
+  if (!cached) {
+    if (fallbackWord) speakEnglishWord(fallbackWord);
+    return;
+  }
+
+  // 从缓存克隆 Audio 节点（已预加载，秒播）
+  const audio = cached.cloneNode();
 
   // 应用语速设置（playbackRate: 0.5 ~ 2.0）
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
 
-  audio.play().catch(() => {});
+  // 音频播放失败时，用 TTS 朗读英文单词
+  let fallbackTriggered = false;
+  const doFallback = () => {
+    if (fallbackTriggered) return;
+    fallbackTriggered = true;
+    if (fallbackWord) speakEnglishWord(fallbackWord);
+  };
+
+  audio.addEventListener('error', doFallback);
+  audio.play().catch(doFallback);
+}
+
+/** 用 TTS 朗读英文单词（音频回退方案） */
+function speakEnglishWord(word) {
+  if (!('speechSynthesis' in window) || !word) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  utter.rate = parseFloat(document.getElementById('speechRate').value);
+  // 尝试使用英文语音
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
+  if (enVoice) utter.voice = enVoice;
+  window.speechSynthesis.speak(utter);
 }
 
 // ====== 中文语音合成（Web Speech API） ======
@@ -364,6 +404,7 @@ function speakChinese(text) {
 
 /**
  * 配对成功时：先播放音标音频，再朗读口诀+后缀
+ * 音频不可用时直接朗读口诀
  * @param {string} audioPath - 音标音频文件路径
  * @param {string} mnText    - 口诀文本（含后缀）
  */
@@ -376,9 +417,16 @@ function playPairAudio(audioPath, mnText) {
     return;
   }
 
-  // 从缓存克隆 Audio 节点（已预加载，秒播）
   const cached = audioCache[audioPath];
-  const audio = cached ? cached.cloneNode() : new Audio(audioPath);
+
+  // 缓存不存在（远程音频预加载失败）→ 直接朗读口诀
+  if (!cached) {
+    speakChinese(mnText);
+    return;
+  }
+
+  // 从缓存克隆 Audio 节点（已预加载，秒播）
+  const audio = cached.cloneNode();
   const rate = parseFloat(document.getElementById('speechRate').value);
   audio.playbackRate = rate;
 
@@ -458,7 +506,8 @@ function loadLevel() {
       type: 'phon',
       key: item.phon,
       text: item.phon,
-      audio: item.audio,   // 本地音频文件路径
+      audio: item.audio,   // 音频文件路径（本地或远程 wikimedia）
+      word: item.word,     // 英文示例单词（音频加载失败时 TTS 朗读）
       mn: item.mn,         // 对应的中文口诀
       hidden: false
     });
@@ -467,6 +516,7 @@ function loadLevel() {
       key: item.phon,
       text: item.mn,                    // 卡片只显示口诀
       audio: item.audio,
+      word: item.word,
       mn: item.mn,                      // 纯中文口诀
       tts: item.mn + ' ' + item.suffix, // TTS 朗读：口诀 + 三连后缀
       hidden: false
@@ -526,8 +576,8 @@ function handleCardClick(idx) {
         // 口诀卡片 → 朗读口诀+后缀
         speakChinese(cur.tts || cur.text);
       } else {
-        // 音标卡片 → 播放本地真人音频
-        playPhoneticAudio(cur.audio);
+        // 音标卡片 → 播放音频，失败时 TTS 朗读英文单词
+        playPhoneticAudio(cur.audio, cur.word);
       }
     }
     renderBoard();
