@@ -1,6 +1,7 @@
 /**
  * 国际音标对对碰 — 游戏主逻辑
- * 使用浏览器 Web Speech API 进行语音朗读
+ * 音标发音：本地真人音频文件（audio/ 目录）
+ * 口诀朗读：浏览器 Web Speech API（中文语音合成）
  */
 
 // ====== 状态变量 ======
@@ -65,130 +66,130 @@ function showToast(msg, type = '') {
   }, 1400);
 }
 
-// ====== 语音合成（Web Speech API） ======
+// ====== 音频播放（本地真人音频文件） ======
 
-/** 检测文本是否包含中文 */
-function isChinese(text) {
-  return /[\u4e00-\u9fff]/.test(text);
-}
+/** 音频缓存：避免每次都创建新的 Audio 对象 */
+const audioCache = {};
 
 /**
- * 朗读文本（自动识别中英文）
- * @param {string} text - 要朗读的文本
- * @param {string} cardType - 卡片类型 'phon' | 'mn'，用于选择语音
+ * 播放本地音标音频文件
+ * @param {string} audioPath - 音频文件路径，如 'audio/vowel-i-long.mp3'
  */
-function speak(text, cardType) {
+function playPhoneticAudio(audioPath) {
+  if (!audioPath) return;
+
+  // 停止正在播放的 TTS 中文朗读
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  // 从缓存取或新建
+  if (!audioCache[audioPath]) {
+    audioCache[audioPath] = new Audio(audioPath);
+  }
+  const audio = audioCache[audioPath];
+
+  // 应用语速设置（playbackRate: 0.5 ~ 2.0）
+  const rate = parseFloat(document.getElementById('speechRate').value);
+  audio.playbackRate = rate;
+
+  // 停止当前播放并重新开始
+  audio.currentTime = 0;
+  audio.play().catch(() => {
+    // 播放失败时静默处理（如浏览器自动播放限制）
+  });
+}
+
+// ====== 中文语音合成（Web Speech API） ======
+
+/**
+ * 朗读中文文本（口诀卡片专用）
+ * @param {string} text - 要朗读的中文文本
+ */
+function speakChinese(text) {
   if (!('speechSynthesis' in window)) return;
-  // 取消正在进行的朗读
+  // 取消正在进行的朗读和音频
   window.speechSynthesis.cancel();
 
   const utter = new SpeechSynthesisUtterance(text);
-  const rate = parseFloat(document.getElementById('speechRate').value);
-  utter.rate = rate;
+  utter.lang = 'zh-CN';
+  utter.rate = parseFloat(document.getElementById('speechRate').value);
 
   const voices = window.speechSynthesis.getVoices();
   const voiceName = document.getElementById('voiceSelect').value;
-  const selectedVoice = voiceName ? voices.find(v => v.name === voiceName) : null;
 
-  // 根据卡片类型和文本内容选择语言
-  if (cardType === 'mn' || isChinese(text)) {
-    // 口诀卡片 → 中文朗读
-    utter.lang = 'zh-CN';
-    // 用户选的语音是中文就用它，否则自动找中文语音
-    if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('zh')) {
-      utter.voice = selectedVoice;
-    } else {
-      const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
-      if (zhVoice) utter.voice = zhVoice;
+  if (voiceName) {
+    const v = voices.find(v => v.name === voiceName);
+    // 仅当选的语音是中文时才使用
+    if (v && v.lang && v.lang.startsWith('zh')) {
+      utter.voice = v;
     }
   } else {
-    // 音标卡片 → 英文朗读示例单词
-    utter.lang = 'en-US';
-    // 用户选的语音是英文就用它，否则自动找英文语音
-    if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('en')) {
-      utter.voice = selectedVoice;
-    } else {
-      const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
-      if (enVoice) utter.voice = enVoice;
-    }
+    // 自动选择中文语音
+    const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
+    if (zhVoice) utter.voice = zhVoice;
   }
 
   window.speechSynthesis.speak(utter);
 }
 
-/** 配对成功时依次朗读英文单词 + 中文口诀 */
-function speakPair(word, mnText) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
+/**
+ * 配对成功时：先播放音标音频，再朗读中文口诀
+ * @param {string} audioPath - 音标音频文件路径
+ * @param {string} mnText    - 中文口诀文本
+ */
+function playPairAudio(audioPath, mnText) {
+  // 停止当前所有播放
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
+  if (!audioPath) {
+    // 没有音频文件则直接朗读中文
+    speakChinese(mnText);
+    return;
+  }
+
+  if (!audioCache[audioPath]) {
+    audioCache[audioPath] = new Audio(audioPath);
+  }
+  const audio = audioCache[audioPath];
   const rate = parseFloat(document.getElementById('speechRate').value);
-  const voices = window.speechSynthesis.getVoices();
-  const voiceName = document.getElementById('voiceSelect').value;
-  const selectedVoice = voiceName ? voices.find(v => v.name === voiceName) : null;
+  audio.playbackRate = rate;
+  audio.currentTime = 0;
 
-  // 先读英文单词
-  const enUtter = new SpeechSynthesisUtterance(word);
-  enUtter.lang = 'en-US';
-  enUtter.rate = rate;
-  // 用户选的语音是英文就用它，否则自动找英文语音
-  if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('en')) {
-    enUtter.voice = selectedVoice;
-  } else {
-    const enVoice = voices.find(v => v.lang && v.lang.startsWith('en'));
-    if (enVoice) enUtter.voice = enVoice;
-  }
+  // 音频播放结束后，朗读中文口诀
+  audio.onended = () => {
+    speakChinese(mnText);
+  };
 
-  // 再读中文口诀
-  const zhUtter = new SpeechSynthesisUtterance(mnText);
-  zhUtter.lang = 'zh-CN';
-  zhUtter.rate = rate;
-  // 用户选的语音是中文就用它，否则自动找中文语音
-  if (selectedVoice && selectedVoice.lang && selectedVoice.lang.startsWith('zh')) {
-    zhUtter.voice = selectedVoice;
-  } else {
-    const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
-    if (zhVoice) zhUtter.voice = zhVoice;
-  }
-
-  // 依次排队朗读
-  window.speechSynthesis.speak(enUtter);
-  window.speechSynthesis.speak(zhUtter);
+  audio.play().catch(() => {
+    // 播放失败时直接朗读中文
+    speakChinese(mnText);
+  });
 }
 
-/** 加载可用语音列表（中文 + 英文） */
+/** 加载可用语音列表（中文语音） */
 function loadVoices() {
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
   const select = document.getElementById('voiceSelect');
-  // 保留"默认发音"选项
-  select.innerHTML = '<option value="">默认发音（自动中英文）</option>';
+  select.innerHTML = '<option value="">默认中文语音</option>';
 
-  // 中文语音
+  // 中文语音（用于口诀朗读）
   const zhVoices = voices.filter(v => v.lang && v.lang.startsWith('zh'));
-  if (zhVoices.length > 0) {
-    const zhGroup = document.createElement('optgroup');
-    zhGroup.label = '中文语音';
-    zhVoices.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.name;
-      opt.textContent = `${v.name} (${v.lang})`;
-      zhGroup.appendChild(opt);
-    });
-    select.appendChild(zhGroup);
-  }
+  zhVoices.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    opt.textContent = `${v.name} (${v.lang})`;
+    select.appendChild(opt);
+  });
 
-  // 英文语音
-  const enVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
-  if (enVoices.length > 0) {
-    const enGroup = document.createElement('optgroup');
-    enGroup.label = '英文语音';
-    enVoices.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.name;
-      opt.textContent = `${v.name} (${v.lang})`;
-      enGroup.appendChild(opt);
-    });
-    select.appendChild(enGroup);
+  // 如果没有中文语音，提示用户
+  if (zhVoices.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '（系统无中文语音）';
+    opt.disabled = true;
+    select.appendChild(opt);
   }
 }
 
@@ -227,14 +228,16 @@ function loadLevel() {
       type: 'phon',
       key: item.phon,
       text: item.phon,
-      word: item.word,
+      audio: item.audio,   // 本地音频文件路径
+      mn: item.mn,         // 对应的中文口诀
       hidden: false
     });
     cardList.push({
       type: 'mn',
       key: item.phon,
       text: item.mn,
-      word: item.word,
+      audio: item.audio,   // 本地音频文件路径
+      mn: item.mn,
       hidden: false
     });
   });
@@ -286,12 +289,14 @@ function handleCardClick(idx) {
   // 没有选中卡片 → 选中当前卡片
   if (selectItem === null) {
     selectItem = { idx, data: cur };
-    // 点击发音模式：音标卡读英文单词，口诀卡读中文文字
+    // 点击发音模式
     if (getPronMode() === 'click') {
       if (cur.type === 'mn') {
-        speak(cur.text, 'mn');   // 朗读口诀中文
+        // 口诀卡片 → 朗读中文文字
+        speakChinese(cur.text);
       } else {
-        speak(cur.word, 'phon'); // 朗读英文示例单词
+        // 音标卡片 → 播放本地真人音频
+        playPhoneticAudio(cur.audio);
       }
     }
     renderBoard();
@@ -320,9 +325,9 @@ function handleCardClick(idx) {
     cards[curIdx].classList.add('matched');
     cards[prevIdx].classList.remove('selected');
 
-    // 配对发音模式：依次朗读英文单词 + 中文口诀
+    // 配对发音模式：先播音标音频，再读中文口诀
     if (getPronMode() === 'match') {
-      speakPair(cur.word, cur.type === 'mn' ? cur.text : prev.text);
+      playPairAudio(cur.audio, cur.mn);
     }
 
     showToast('✅ 配对成功！', 'success');
