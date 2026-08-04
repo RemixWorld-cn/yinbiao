@@ -165,6 +165,20 @@
       <button id="resetConfigBtn" class="btn-danger">重置所有配置</button>
     </div>
 
+    <!-- 常错音标范围 -->
+    <div class="setting-item">
+      <h4>📋 常错音标范围</h4>
+      <div class="setting-desc">
+        选择常错音标的记录方式：<br>
+        <b>全部记录：</b>每次配对失败的音标会永久保存到浏览器中，关闭页面后依然保留，方便长期复习。<br>
+        <b>本次记录：</b>仅在当前游戏中记录，刷新或关闭页面后自动清空，适合专注当前练习。
+      </div>
+      <select id="errorScope">
+        <option value="all">全部记录（永久保存）</option>
+        <option value="session">本次记录（不保存）</option>
+      </select>
+    </div>
+
     <div class="btn-row">
       <button id="closeSettings" class="btn-primary">关闭</button>
     </div>

@@ -31,6 +31,7 @@ const pauseBtn     = document.getElementById('pauseBtn');
 // ====== 配置管理（localStorage 持久化） ======
 
 const CONFIG_KEY = 'ipaGameConfig';
+const ERROR_KEY  = 'ipaGameErrors';  // 常错音标持久化存储键
 
 /** 加载已保存的配置 */
 function loadConfig() {
@@ -55,6 +56,36 @@ function saveConfig(partial) {
 function applyTheme(theme) {
   document.body.className = '';
   document.body.classList.add('theme-' + (theme || 'pink'));
+}
+
+/** 获取常错音标记录范围：all=全部记录(持久化) / session=本次记录(不保存) */
+function getErrorScope() {
+  const sel = document.getElementById('errorScope');
+  return sel ? sel.value : 'session';
+}
+
+/** 从 localStorage 加载持久化的常错音标 */
+function loadPersistedErrors() {
+  try {
+    const saved = localStorage.getItem(ERROR_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/** 将常错音标保存到 localStorage */
+function savePersistedErrors() {
+  try {
+    localStorage.setItem(ERROR_KEY, JSON.stringify(errorMap));
+  } catch (e) {}
+}
+
+/** 清除持久化的常错音标 */
+function clearPersistedErrors() {
+  try {
+    localStorage.removeItem(ERROR_KEY);
+  } catch (e) {}
 }
 
 /** 保存顶部设置栏的当前值 */
@@ -94,6 +125,16 @@ function initSettings() {
     o.classList.toggle('active', o.dataset.theme === theme);
   });
 
+  // 恢复常错音标范围设置
+  const errorScope = config.errorScope || 'session';
+  const errorScopeSel = document.getElementById('errorScope');
+  if (errorScopeSel) errorScopeSel.value = errorScope;
+
+  // 如果是"全部记录"模式，从 localStorage 加载历史错题
+  if (errorScope === 'all') {
+    errorMap = loadPersistedErrors();
+  }
+
   // 设置图标 → 打开弹窗
   document.getElementById('settingsIcon').addEventListener('click', () => {
     document.getElementById('settingsModal').classList.add('show');
@@ -129,8 +170,9 @@ function initSettings() {
 
   // 重置配置按钮
   document.getElementById('resetConfigBtn').addEventListener('click', () => {
-    if (confirm('确定要重置所有配置吗？\n\n将清除：主题颜色、关卡模式、发音方式、语速、朗读人等所有设置。\n重置后页面会自动刷新。')) {
+    if (confirm('确定要重置所有配置吗？\n\n将清除：主题颜色、关卡模式、发音方式、语速、朗读人、常错音标记录等所有设置。\n重置后页面会自动刷新。')) {
       localStorage.removeItem(CONFIG_KEY);
+      localStorage.removeItem(ERROR_KEY);
       showToast('✅ 已重置所有配置', 'success');
       setTimeout(() => location.reload(), 1200);
     }
@@ -489,6 +531,10 @@ function handleCardClick(idx) {
     // 记录常错音标
     errorMap[prev.key] = (errorMap[prev.key] || 0) + 1;
     errorMap[cur.key] = (errorMap[cur.key] || 0) + 1;
+    // 如果是"全部记录"模式，同步保存到浏览器
+    if (getErrorScope() === 'all') {
+      savePersistedErrors();
+    }
 
     // 动画结束后恢复
     setTimeout(() => {
@@ -585,7 +631,10 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentMode = btn.dataset.mode;
-    errorMap = {};  // 切换模式清空错题
+    // "全部记录"模式不清空错题，"本次记录"模式清空
+    if (getErrorScope() !== 'all') {
+      errorMap = {};
+    }
     saveTopBarSettings();
     loadLevel();
   });
@@ -617,6 +666,25 @@ document.getElementById('voiceSelect').addEventListener('change', () => {
   saveTopBarSettings();
 });
 
+// 常错音标范围切换
+document.getElementById('errorScope').addEventListener('change', () => {
+  const scope = getErrorScope();
+  saveConfig({ errorScope: scope });
+  if (scope === 'all') {
+    // 切到"全部记录"：加载历史错题并合并到当前
+    const persisted = loadPersistedErrors();
+    Object.entries(persisted).forEach(([k, v]) => {
+      errorMap[k] = (errorMap[k] || 0) + v;
+    });
+    savePersistedErrors();
+    showToast('📋 已切换为全部记录，历史错题已加载', 'success');
+  } else {
+    // 切到"本次记录"：清除持久化数据，仅保留本次
+    clearPersistedErrors();
+    showToast('📋 已切换为本次记录，不再保存错题', 'success');
+  }
+});
+
 // 暂停/继续
 pauseBtn.addEventListener('click', togglePause);
 
@@ -638,6 +706,7 @@ document.getElementById('closeError').addEventListener('click', () => {
 // 清空错题
 document.getElementById('clearErrors').addEventListener('click', () => {
   errorMap = {};
+  clearPersistedErrors();  // 同时清除浏览器中的持久化错题
   document.getElementById('errorList').innerHTML =
     '<div class="empty">已清空，继续加油！</div>';
   showToast('已清空错题记录', 'success');
