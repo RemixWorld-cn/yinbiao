@@ -301,6 +301,8 @@ button:active{transform:scale(0.96);}
 #settingsModal .modal-box{
   width:90%;
   max-width:420px;
+  max-height:85vh;
+  overflow-y:auto;
   text-align:left;
   padding:28px 30px;
   position:relative;
@@ -319,10 +321,11 @@ button:active{transform:scale(0.96);}
   font-size:18px;color:#ccc;cursor:pointer;
   border-radius:50%;transition:all 0.2s;
   user-select:none;line-height:1;
+  z-index:10;
 }
 .modal-close:hover{
-  color:#ff6b6b;
-  background:rgba(255,107,107,0.1);
+  color:#4295ff;
+  background:rgba(66,149,255,0.1);
   transform:scale(1.15);
 }
 .modal-close:active{transform:scale(0.9);}
@@ -332,6 +335,38 @@ button:active{transform:scale(0.96);}
   text-align:center;
   font-size:12px;color:#bbb;
   margin-top:14px;margin-bottom:0;
+}
+
+/* 开关组件 */
+.toggle-switch{
+  display:inline-flex;align-items:center;gap:10px;
+  cursor:pointer;user-select:none;
+}
+.toggle-switch input{
+  display:none;
+}
+.toggle-slider{
+  width:46px;height:26px;
+  background:#e0e0e0;border-radius:13px;
+  position:relative;transition:background 0.3s;
+  flex-shrink:0;
+}
+.toggle-slider::after{
+  content:'';
+  width:20px;height:20px;
+  background:#fff;border-radius:50%;
+  position:absolute;top:3px;left:3px;
+  transition:transform 0.3s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider{
+  background:var(--primary-color,#4295ff);
+}
+.toggle-switch input:checked + .toggle-slider::after{
+  transform:translateX(20px);
+}
+.toggle-label-text{
+  font-size:14px;color:#555;font-weight:600;
 }
 .setting-item{
   margin-bottom:22px;
@@ -454,7 +489,24 @@ button:active{transform:scale(0.96);}
   .settings-bar{gap:6px;padding:8px;}
   .setting-group select{font-size:12px;padding:5px 8px;}
   .settings-icon{width:32px;height:32px;font-size:18px;}
-  #settingsModal .modal-box{padding:20px 18px;}
+  #settingsModal .modal-box{padding:20px 18px;max-height:80vh;}
   .color-options{gap:10px;}
   .color-circle{width:34px;height:34px;}
+  .setting-item h4{font-size:14px;}
+  .setting-item .setting-desc{font-size:11px;padding:6px 10px;}
+  .toggle-label-text{font-size:13px;}
+  #errorModal .modal-box{min-width:auto !important;width:92%;}
+}
+
+@media(max-width:380px){
+  #settingsModal .modal-box{padding:16px 14px;max-height:78vh;}
+  .color-options{gap:8px;}
+  .color-circle{width:30px;height:30px;}
+  .color-option .color-label{font-size:10px;}
+  .modal-box h2{font-size:18px;}
+  .modal-box h3{font-size:16px;}
+}
+
+@media(min-width:601px) and (max-width:900px){
+  #settingsModal .modal-box{max-width:380px;}
 }

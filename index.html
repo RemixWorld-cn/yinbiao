@@ -102,13 +102,15 @@
 
 <!-- ====== 常错音标弹窗 ====== -->
 <div class="modal" id="errorModal">
-  <div class="modal-box" style="min-width:360px;">
+  <div class="modal-box" style="min-width:360px;position:relative;">
+    <span class="modal-close" id="downloadErrorReport" title="生成图片报告并下载">📷</span>
     <h3>📋常错音标统计</h3>
     <div id="errorList"></div>
     <div class="btn-row">
       <button id="clearErrors" class="btn-secondary">清空错题</button>
       <button id="closeError" class="btn-primary">关闭</button>
     </div>
+    <p class="modal-hint">💡 点击阴影处也可关闭界面</p>
   </div>
 </div>
 
@@ -177,6 +179,20 @@
         <option value="all">全部记录（永久保存）</option>
         <option value="session">本次记录（不保存）</option>
       </select>
+    </div>
+
+    <!-- 增加音标对数 -->
+    <div class="setting-item">
+      <h4>🔢 增加音标对数</h4>
+      <div class="setting-desc">
+        开启后，顶部「音标对数」下拉框会增加更多选项（20对、25对、30对、35对、40对等），适合想要更多卡片的进阶挑战。<br>
+        <b>用途：</b>默认只有5/10/15对和全部，开启后可获得更细分的对数选择。关闭后恢复默认选项。设置会自动保存。
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="expandPairs">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label-text">开启更多对数选项</span>
+      </label>
     </div>
 
     <div class="btn-row">

@@ -114,6 +114,53 @@ function loadTopBarSettings() {
   }
 }
 
+/** 根据开关状态更新音标对数下拉框选项 */
+function applyExpandPairs(expanded) {
+  const sel = document.getElementById('pairCount');
+  const currentValue = sel.value;
+
+  // 清空现有选项
+  sel.innerHTML = '';
+
+  // 基础选项
+  const baseOptions = [
+    { value: '5',  label: '5对' },
+    { value: '10', label: '10对' },
+    { value: '15', label: '15对' }
+  ];
+
+  // 扩展选项
+  const extraOptions = [
+    { value: '20', label: '20对' },
+    { value: '25', label: '25对' },
+    { value: '30', label: '30对' },
+    { value: '35', label: '35对' },
+    { value: '40', label: '40对' },
+    { value: '45', label: '45对' }
+  ];
+
+  const options = expanded ? [...baseOptions, ...extraOptions] : baseOptions;
+  options.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt.value;
+    o.textContent = opt.label;
+    sel.appendChild(o);
+  });
+
+  // "全部"选项始终存在
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all';
+  allOpt.textContent = '全部';
+  sel.appendChild(allOpt);
+
+  // 尝试恢复之前选中的值
+  if ([...sel.options].some(o => o.value === currentValue)) {
+    sel.value = currentValue;
+  } else {
+    sel.value = '10';
+  }
+}
+
 /** 初始化设置面板 */
 function initSettings() {
   const config = loadConfig();
@@ -134,6 +181,11 @@ function initSettings() {
   if (errorScope === 'all') {
     errorMap = loadPersistedErrors();
   }
+
+  // 恢复"增加音标对数"设置
+  const expandPairs = config.expandPairs === true;
+  document.getElementById('expandPairs').checked = expandPairs;
+  applyExpandPairs(expandPairs);
 
   // 设置图标 → 打开弹窗
   document.getElementById('settingsIcon').addEventListener('click', () => {
@@ -183,6 +235,15 @@ function initSettings() {
     if (e.target === document.getElementById('settingsModal')) {
       document.getElementById('settingsModal').classList.remove('show');
     }
+  });
+
+  // 增加音标对数开关
+  document.getElementById('expandPairs').addEventListener('change', (e) => {
+    const expanded = e.target.checked;
+    applyExpandPairs(expanded);
+    saveConfig({ expandPairs: expanded });
+    saveTopBarSettings(); // 保存当前选中的对数值
+    showToast(expanded ? '🔢 已增加更多对数选项' : '🔢 已恢复默认对数选项', 'success');
   });
 }
 
@@ -623,6 +684,120 @@ function showErrorModal() {
   errorModal.classList.add('show');
 }
 
+/** 生成常错音标图片报告并下载为 PNG */
+function downloadErrorReport() {
+  const entries = Object.entries(errorMap).sort((a, b) => b[1] - a[1]);
+
+  if (entries.length === 0) {
+    showToast('暂无错题数据，无法生成报告', 'error');
+    return;
+  }
+
+  const totalErrors = entries.reduce((sum, [, v]) => sum + v, 0);
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 画布参数
+  const colWidths = [80, 200, 100];
+  const tableX = 30;
+  const tableW = colWidths.reduce((a, b) => a + b, 0);
+  const rowH = 40;
+  const headerH = 44;
+  const titleH = 70;
+  const footerH = 50;
+  const canvasW = tableX * 2 + tableW;
+  const canvasH = titleH + headerH + entries.length * rowH + footerH;
+
+  const canvas = document.createElement('canvas');
+  const scale = 2; // 高清绘制
+  canvas.width = canvasW * scale;
+  canvas.height = canvasH * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // 背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // 标题
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 22px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('📋 常错音标报告', canvasW / 2, 36);
+
+  // 日期信息
+  ctx.fillStyle = '#999';
+  ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText(`生成时间：${dateStr} ${timeStr}  |  共 ${entries.length} 个音标  |  累计出错 ${totalErrors} 次`, canvasW / 2, 58);
+
+  // 表头背景
+  ctx.fillStyle = '#d64878';
+  ctx.fillRect(tableX, titleH, tableW, headerH);
+
+  // 表头文字
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 15px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const headers = ['序号', '音标', '出错次数'];
+  let cx = tableX;
+  headers.forEach((h, i) => {
+    ctx.fillText(h, cx + colWidths[i] / 2, titleH + headerH / 2);
+    cx += colWidths[i];
+  });
+
+  // 表格内容
+  entries.forEach(([phon, count], idx) => {
+    const y = titleH + headerH + idx * rowH;
+
+    // 斑马纹背景
+    ctx.fillStyle = idx % 2 === 0 ? '#fff5f8' : '#ffffff';
+    ctx.fillRect(tableX, y, tableW, rowH);
+
+    // 行文字
+    ctx.fillStyle = '#555';
+    ctx.font = '14px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(String(idx + 1), tableX + colWidths[0] / 2, y + rowH / 2);
+
+    ctx.fillStyle = '#d64878';
+    ctx.font = 'bold 20px "Segoe UI","Charis SIL",serif';
+    ctx.fillText(phon, tableX + colWidths[0] + colWidths[1] / 2, y + rowH / 2);
+
+    ctx.fillStyle = '#e03131';
+    ctx.font = 'bold 14px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(count + ' 次', tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + rowH / 2);
+
+    // 行边框
+    ctx.strokeStyle = '#ffe0ec';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tableX, y + rowH);
+    ctx.lineTo(tableX + tableW, y + rowH);
+    ctx.stroke();
+  });
+
+  // 外边框
+  ctx.strokeStyle = '#d64878';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(tableX, titleH, tableW, headerH + entries.length * rowH);
+
+  // 底部提示
+  ctx.fillStyle = '#bbb';
+  ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('🎈 国际音标对对碰 — 常错音标统计报告', canvasW / 2, canvasH - 20);
+
+  // 下载
+  const link = document.createElement('a');
+  link.download = `常错音标报告_${dateStr}_${timeStr.replace(':','')}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  showToast('📷 报告已生成并下载', 'success');
+}
+
 // ====== 事件绑定 ======
 
 // 模式切换
@@ -693,6 +868,9 @@ document.getElementById('resetBtn').addEventListener('click', () => loadLevel())
 
 // 常错音标
 document.getElementById('showErrorBtn').addEventListener('click', showErrorModal);
+
+// 生成图片报告并下载
+document.getElementById('downloadErrorReport').addEventListener('click', downloadErrorReport);
 
 // 关闭弹窗
 document.getElementById('closeWin').addEventListener('click', () => {
