@@ -26,11 +26,11 @@ const VOWEL_DATA = [
   { phon: 'ɑː',  mn: '大叫一声',   suffix: '啊啊啊',         word: 'car',    audio: 'audio/vowel-a-long.mp3' },
   { phon: 'ɒ',   mn: '半边圆圈',   suffix: '哦哦哦',         word: 'hot',    audio: 'audio/vowel-o-short.mp3' },
   { phon: 'ɔː',  mn: '恍然大悟',   suffix: '哦哦哦',         word: 'law',    audio: 'audio/vowel-aw-long.mp3' },
-  { phon: 'ʊ',   mn: '污污水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3' },
+  { phon: 'ʊ',   mn: '呜呜水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3' },
   { phon: 'uː',  mn: '织件毛衣',   suffix: '衣衣衣',         word: 'food',   audio: 'audio/vowel-u-long.mp3' },
   { phon: 'ʌ',   mn: '三天没吃',   suffix: '饿饿饿',         word: 'cup',    audio: 'audio/vowel-uh-short.mp3' },
-  { phon: 'ɜː',  mn: '尖角扎人',   suffix: '啊啊啊',         word: 'bird',   audio: 'audio/vowel-er-long.mp3' },
-  { phon: 'ə',   mn: '小鹅倒立胃', suffix: '鹅鹅鹅',         word: 'about',  audio: 'audio/vowel-schwa-short.mp3' },
+  { phon: 'ɜː',  mn: '尖叫扎人',   suffix: '啊啊啊',         word: 'bird',   audio: 'audio/vowel-er-long.mp3' },
+  { phon: 'ə',   mn: '小鹅倒立',   suffix: '鹅鹅鹅',         word: 'about',  audio: 'audio/vowel-schwa-short.mp3' },
   // --- 双元音 8 ---
   { phon: 'eɪ',  mn: '应答一声',   suffix: 'A A A',          word: 'day',    audio: 'audio/diphthong-ei.mp3' },
   { phon: 'aɪ',  mn: '爱的呼唤',   suffix: 'I I I',          word: 'my',     audio: 'audio/diphthong-ai.mp3' },
@@ -64,17 +64,17 @@ const CONSONANT_DATA = [
   { phon: 'tʃ',  mn: '大口吃饭',   suffix: 'ch ch ch',       word: 'chair',  audio: WIKI_AUDIO_BASE + 'Voiceless_palato-alveolar_affricate.ogg' },
   { phon: 'dʒ',  mn: '蜘蛛织网',   suffix: 'zh zh zh',       word: 'judge',  audio: WIKI_AUDIO_BASE + 'Voiced_palato-alveolar_affricate.ogg' },
   // 以下4个（tr/dr/ts/dz）仓库缺失或.ogx格式浏览器不可播放，使用本地音频
-  { phon: 'tr',  mn: '轻轻戳洞',   suffix: 'ch ch ch',       word: 'tree',   audio: 'audio/consonant-tr.mp3' },
+  { phon: 'tr',  mn: '轻轻戳动',   suffix: 'ch ch ch',       word: 'tree',   audio: 'audio/consonant-tr.mp3' },
   { phon: 'dr',  mn: '小鸟捉虫',   suffix: 'zhuo zhuo zhuo', word: 'dream',  audio: 'audio/consonant-dr.mp3' },
-  { phon: 'ts',  mn: '呲牙咧嘴',   suffix: 'z z z',          word: 'cats',   audio: 'audio/consonant-ts.mp3' },
+  { phon: 'ts',  mn: '龇牙咧嘴',   suffix: 'z z z',          word: 'cats',   audio: 'audio/consonant-ts.mp3' },
   { phon: 'dz',  mn: '工人伐木',   suffix: 'z z z',          word: 'beds',   audio: 'audio/consonant-dz.mp3' },
   { phon: 'm',   mn: '嘴巴紧闭',   suffix: '嗯嗯嗯',         word: 'man',    audio: WIKI_AUDIO_BASE + 'Bilabial_nasal.ogg' },
   { phon: 'n',   mn: '嘴巴微张',   suffix: '嗯嗯嗯',         word: 'no',     audio: WIKI_AUDIO_BASE + 'Alveolar_nasal.ogg' },
   { phon: 'ŋ',   mn: '舌头拱起',   suffix: '嗯嗯嗯',         word: 'sing',   audio: WIKI_AUDIO_BASE + 'Velar_nasal.ogg' },
   { phon: 'l',   mn: '气从旁流',   suffix: '了了了',         word: 'love',   audio: WIKI_AUDIO_BASE + 'Alveolar_lateral_approximant.ogg' },
-  { phon: 'r',   mn: '卷起舌尖',   suffix: 'r r r',          word: 'red',    audio: WIKI_AUDIO_BASE + 'Alveolar_approximant.ogg' },
-  { phon: 'j',   mn: '一位爷爷',   suffix: 'y y y',          word: 'yes',    audio: WIKI_AUDIO_BASE + 'Palatal_approximant.ogg' },
-  { phon: 'w',   mn: '学生是我',   suffix: 'w w w',          word: 'we',     audio: WIKI_AUDIO_BASE + 'Voiced_labio-velar_approximant.ogg' }
+  { phon: 'r',   mn: '舌根后缩',   suffix: 'r r r',          word: 'red',    audio: WIKI_AUDIO_BASE + 'Alveolar_approximant.ogg' },
+  { phon: 'j',   mn: '卷起舌尖',   suffix: 'y y y',          word: 'yes',    audio: WIKI_AUDIO_BASE + 'Palatal_approximant.ogg' },
+  { phon: 'w',   mn: '一位爷爷',   suffix: 'w w w',          word: 'we',     audio: WIKI_AUDIO_BASE + 'Voiced_labio-velar_approximant.ogg' }
 ];
 
 // 卡片配色（柔和马卡龙色系）
