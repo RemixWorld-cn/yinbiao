@@ -20,17 +20,17 @@ const WIKI_AUDIO_BASE = 'https://raw.githubusercontent.com/jynbug/wikimedia-phon
 // 仓库无元音音频，使用本地音频文件
 const VOWEL_DATA = [
   // --- 单元音 12 ---
-  { phon: 'iː',  mn: '火车鸣笛',   suffix: '呜呜呜',         word: 'see',    audio: 'audio/vowel-i-long.mp3' },
+  { phon: 'iː',  mn: '织件毛衣',   suffix: '衣衣衣',         word: 'see',    audio: 'audio/vowel-i-long.mp3' },
   { phon: 'ɪ',   mn: '喊句口号',   suffix: '耶耶耶',         word: 'sit',    audio: 'audio/vowel-i-short.mp3', videoPhon: 'eɪ' },
   { phon: 'e',   mn: '一指微笑',   suffix: '哎哎哎',         word: 'bed',    audio: 'audio/vowel-e-short.mp3' },
   { phon: 'æ',   mn: '三指咧嘴',   suffix: '啊啊啊',         word: 'cat',    audio: 'audio/vowel-ae-short.mp3' },
   { phon: 'ɑː',  mn: '大叫一声',   suffix: '啊啊啊',         word: 'car',    audio: 'audio/vowel-a-long.mp3' },
   { phon: 'ɒ',   mn: '半边圆圈',   suffix: '哦哦哦',         word: 'hot',    audio: 'audio/vowel-o-short.mp3', videoPhon: 'ɜː' },
   { phon: 'ɔː',  mn: '恍然大悟',   suffix: '哦哦哦',         word: 'law',    audio: 'audio/vowel-aw-long.mp3' },
-  { phon: 'ʊ',   mn: '呜呜水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3', videoPhon: 'aʊ' },
-  { phon: 'uː',  mn: '织件毛衣',   suffix: '衣衣衣',         word: 'food',   audio: 'audio/vowel-u-long.mp3' },
-  { phon: 'ʌ',   mn: '三天没吃',   suffix: '饿饿饿',         word: 'cup',    audio: 'audio/vowel-uh-short.mp3' },
-  { phon: 'ɜː',  mn: '尖叫扎人',   suffix: '啊啊啊',         word: 'bird',   audio: 'audio/vowel-er-long.mp3', videoPhon: 'æ' },
+  { phon: 'ʊ',   mn: '污污水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3', videoPhon: 'aʊ' },
+  { phon: 'uː',  mn: '火车鸣笛',   suffix: '呜呜呜',         word: 'food',   audio: 'audio/vowel-u-long.mp3' },
+  { phon: 'ʌ',   mn: '尖角扎人',   suffix: '啊啊啊',         word: 'cup',    audio: 'audio/vowel-uh-short.mp3' },
+  { phon: 'ɜː',  mn: '三天没吃',   suffix: '饿饿饿',         word: 'bird',   audio: 'audio/vowel-er-long.mp3', videoPhon: 'æ' },
   { phon: 'ə',   mn: '小鹅倒立',   suffix: '鹅鹅鹅',         word: 'about',  audio: 'audio/vowel-schwa-short.mp3', videoPhon: 'əː' },
   // --- 双元音 8 ---
   { phon: 'eɪ',  mn: '应答一声',   suffix: 'A A A',          word: 'day',    audio: 'audio/diphthong-ei.mp3', videoPhon: 'e' },
@@ -73,9 +73,9 @@ const CONSONANT_DATA = [
   { phon: 'n',   mn: '嘴巴微张',   suffix: '嗯嗯嗯',         word: 'no',     audio: WIKI_AUDIO_BASE + 'Alveolar_nasal.ogg' },
   { phon: 'ŋ',   mn: '舌头拱起',   suffix: '嗯嗯嗯',         word: 'sing',   audio: WIKI_AUDIO_BASE + 'Velar_nasal.ogg' },
   { phon: 'l',   mn: '气从旁流',   suffix: '了了了',         word: 'love',   audio: WIKI_AUDIO_BASE + 'Alveolar_lateral_approximant.ogg' },
-  { phon: 'r',   mn: '舌根后缩',   suffix: 'r r r',          word: 'red',    audio: WIKI_AUDIO_BASE + 'Alveolar_approximant.ogg' },
-  { phon: 'j',   mn: '卷起舌尖',   suffix: 'y y y',          word: 'yes',    audio: WIKI_AUDIO_BASE + 'Palatal_approximant.ogg' },
-  { phon: 'w',   mn: '一位爷爷',   suffix: 'w w w',          word: 'we',     audio: WIKI_AUDIO_BASE + 'Voiced_labio-velar_approximant.ogg' }
+  { phon: 'r',   mn: '卷起舌尖',   suffix: 'r r r',          word: 'red',    audio: WIKI_AUDIO_BASE + 'Alveolar_approximant.ogg' },
+  { phon: 'j',   mn: '一位爷爷',   suffix: 'y y y',          word: 'yes',    audio: WIKI_AUDIO_BASE + 'Palatal_approximant.ogg' },
+  { phon: 'w',   mn: '学生是我',   suffix: 'w w w',          word: 'we',     audio: WIKI_AUDIO_BASE + 'Voiced_labio-velar_approximant.ogg' }
 ];
 
 // 卡片配色（柔和马卡龙色系）
