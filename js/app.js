@@ -509,7 +509,6 @@ function loadLevel() {
       audio: item.audio,   // 音频文件路径（本地或远程 wikimedia）
       word: item.word,     // 英文示例单词（音频加载失败时 TTS 朗读）
       mn: item.mn,         // 对应的中文口诀
-      videoPhon: item.videoPhon || '',  // 视频自动字幕识别错误的音标（显示在音标卡片上）
       hidden: false
     });
     cardList.push({
@@ -555,12 +554,7 @@ function renderBoard() {
     if (item.hidden)   div.classList.add('hidden');
     if (selectItem && selectItem.idx === idx) div.classList.add('selected');
 
-    // 音标卡片：如果有视频标注错误，在音标下方显示视频标注的音标
-    if (item.type === 'phon' && item.videoPhon) {
-      div.innerHTML = item.text + '<br><span style="font-size:13px;color:#999;font-weight:400;">(视频: ' + item.videoPhon + ')</span>';
-    } else {
-      div.textContent = item.text;
-    }
+    div.textContent = item.text;
 
     div.dataset.idx = idx;
     div.addEventListener('click', () => handleCardClick(idx));

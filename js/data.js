@@ -7,7 +7,6 @@
  *   - 元音：使用本地 audio/ 目录音频文件
  * mn         字段为中文口诀（Web Speech API 朗读此字段）
  * suffix     字段为三连拼音/字母后缀（仅显示，不参与TTS朗读）
- * videoPhon  字段为视频自动字幕识别错误的音标（仅11条有此字段，显示在音标卡片上）
  *
  * 配对标准严格按照文档：音标(phon) ↔ 中文口诀(mn)
  */
@@ -21,26 +20,26 @@ const WIKI_AUDIO_BASE = 'https://raw.githubusercontent.com/jynbug/wikimedia-phon
 const VOWEL_DATA = [
   // --- 单元音 12 ---
   { phon: 'iː',  mn: '织件毛衣',   suffix: '衣衣衣',         word: 'see',    audio: 'audio/vowel-i-long.mp3' },
-  { phon: 'ɪ',   mn: '喊句口号',   suffix: '耶耶耶',         word: 'sit',    audio: 'audio/vowel-i-short.mp3', videoPhon: 'eɪ' },
+  { phon: 'ɪ',   mn: '喊句口号',   suffix: '耶耶耶',         word: 'sit',    audio: 'audio/vowel-i-short.mp3' },
   { phon: 'e',   mn: '一指微笑',   suffix: '哎哎哎',         word: 'bed',    audio: 'audio/vowel-e-short.mp3' },
   { phon: 'æ',   mn: '三指咧嘴',   suffix: '啊啊啊',         word: 'cat',    audio: 'audio/vowel-ae-short.mp3' },
   { phon: 'ɑː',  mn: '大叫一声',   suffix: '啊啊啊',         word: 'car',    audio: 'audio/vowel-a-long.mp3' },
-  { phon: 'ɒ',   mn: '半边圆圈',   suffix: '哦哦哦',         word: 'hot',    audio: 'audio/vowel-o-short.mp3', videoPhon: 'ɜː' },
+  { phon: 'ɒ',   mn: '半边圆圈',   suffix: '哦哦哦',         word: 'hot',    audio: 'audio/vowel-o-short.mp3' },
   { phon: 'ɔː',  mn: '恍然大悟',   suffix: '哦哦哦',         word: 'law',    audio: 'audio/vowel-aw-long.mp3' },
-  { phon: 'ʊ',   mn: '污污水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3', videoPhon: 'aʊ' },
+  { phon: 'ʊ',   mn: '污污水坑',   suffix: '呜呜呜',         word: 'book',   audio: 'audio/vowel-u-short.mp3' },
   { phon: 'uː',  mn: '火车鸣笛',   suffix: '呜呜呜',         word: 'food',   audio: 'audio/vowel-u-long.mp3' },
   { phon: 'ʌ',   mn: '尖角扎人',   suffix: '啊啊啊',         word: 'cup',    audio: 'audio/vowel-uh-short.mp3' },
-  { phon: 'ɜː',  mn: '三天没吃',   suffix: '饿饿饿',         word: 'bird',   audio: 'audio/vowel-er-long.mp3', videoPhon: 'æ' },
-  { phon: 'ə',   mn: '小鹅倒立',   suffix: '鹅鹅鹅',         word: 'about',  audio: 'audio/vowel-schwa-short.mp3', videoPhon: 'əː' },
+  { phon: 'ɜː',  mn: '三天没吃',   suffix: '饿饿饿',         word: 'bird',   audio: 'audio/vowel-er-long.mp3' },
+  { phon: 'ə',   mn: '小鹅倒立',   suffix: '鹅鹅鹅',         word: 'about',  audio: 'audio/vowel-schwa-short.mp3' },
   // --- 双元音 8 ---
-  { phon: 'eɪ',  mn: '应答一声',   suffix: 'A A A',          word: 'day',    audio: 'audio/diphthong-ei.mp3', videoPhon: 'e' },
-  { phon: 'aɪ',  mn: '爱的呼唤',   suffix: 'I I I',          word: 'my',     audio: 'audio/diphthong-ai.mp3', videoPhon: 'ɑː' },
+  { phon: 'eɪ',  mn: '应答一声',   suffix: 'A A A',          word: 'day',    audio: 'audio/diphthong-ei.mp3' },
+  { phon: 'aɪ',  mn: '爱的呼唤',   suffix: 'I I I',          word: 'my',     audio: 'audio/diphthong-ai.mp3' },
   { phon: 'ɔɪ',  mn: '熬夜男孩',   suffix: 'O O O',          word: 'boy',    audio: 'audio/diphthong-oi.mp3' },
   { phon: 'aʊ',  mn: '老虎咆哮',   suffix: 'O O O',          word: 'how',    audio: 'audio/diphthong-au.mp3' },
-  { phon: 'əʊ',  mn: '疯狂呕吐',   suffix: 'O O O',          word: 'go',     audio: 'audio/diphthong-ou.mp3', videoPhon: 'ʊ' },
-  { phon: 'ɪə',  mn: '一只小鹅',   suffix: '鹅鹅鹅',         word: 'here',   audio: 'audio/diphthong-ear.mp3', videoPhon: 'ɜː' },
-  { phon: 'eə',  mn: '挨饿小鹅',   suffix: 'E E E',          word: 'air',    audio: 'audio/diphthong-air.mp3', videoPhon: 'ɪ' },
-  { phon: 'ʊə',  mn: '五只小鹅',   suffix: 'U U U',          word: 'tour',   audio: 'audio/diphthong-ure.mp3', videoPhon: 'ʊ' }
+  { phon: 'əʊ',  mn: '疯狂呕吐',   suffix: 'O O O',          word: 'go',     audio: 'audio/diphthong-ou.mp3' },
+  { phon: 'ɪə',  mn: '一只小鹅',   suffix: '鹅鹅鹅',         word: 'here',   audio: 'audio/diphthong-ear.mp3' },
+  { phon: 'eə',  mn: '挨饿小鹅',   suffix: 'E E E',          word: 'air',    audio: 'audio/diphthong-air.mp3' },
+  { phon: 'ʊə',  mn: '五只小鹅',   suffix: 'U U U',          word: 'tour',   audio: 'audio/diphthong-ure.mp3' }
 ];
 
 // ========== 辅音 28 ==========
