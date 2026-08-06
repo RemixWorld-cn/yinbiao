@@ -371,6 +371,43 @@ function speakEnglishWord(word) {
 
 // ====== 中文语音合成（Web Speech API） ======
 
+// 缓存语音列表，避免每次调用都重新获取
+let cachedVoices = [];
+
+/**
+ * 获取最佳中文语音（优先普通话 zh-CN）
+ */
+function getBestZhVoice() {
+  if (cachedVoices.length === 0) return null;
+  // 优先 zh-CN（普通话），其次 zh-HK，最后 zh-TW
+  return cachedVoices.find(v => v.lang === 'zh-CN')
+      || cachedVoices.find(v => v.lang && v.lang.startsWith('zh-CN'))
+      || cachedVoices.find(v => v.lang && v.lang.startsWith('zh'))
+      || null;
+}
+
+/**
+ * 等待语音列表加载完成（移动端首次加载常为空，需异步等待）
+ */
+function waitForVoices(maxWait) {
+  return new Promise((resolve) => {
+    if (cachedVoices.length > 0) { resolve(cachedVoices); return; }
+    const start = Date.now();
+    function check() {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        cachedVoices = voices;
+        resolve(voices);
+      } else if (Date.now() - start > maxWait) {
+        resolve([]);
+      } else {
+        setTimeout(check, 100);
+      }
+    }
+    check();
+  });
+}
+
 /**
  * 朗读中文文本（口诀卡片专用）
  * @param {string} text - 要朗读的中文文本
@@ -384,19 +421,34 @@ function speakChinese(text) {
   utter.lang = 'zh-CN';
   utter.rate = parseFloat(document.getElementById('speechRate').value);
 
-  const voices = window.speechSynthesis.getVoices();
   const voiceName = document.getElementById('voiceSelect').value;
 
+  // 如果缓存为空，先尝试同步获取
+  if (cachedVoices.length === 0) {
+    cachedVoices = window.speechSynthesis.getVoices();
+  }
+
   if (voiceName) {
-    const v = voices.find(v => v.name === voiceName);
-    // 仅当选的语音是中文时才使用
+    const v = cachedVoices.find(v => v.name === voiceName);
     if (v && v.lang && v.lang.startsWith('zh')) {
       utter.voice = v;
     }
   } else {
-    // 自动选择中文语音
-    const zhVoice = voices.find(v => v.lang && v.lang.startsWith('zh'));
+    // 自动选择最佳中文语音（优先普通话）
+    const zhVoice = getBestZhVoice();
     if (zhVoice) utter.voice = zhVoice;
+  }
+
+  // 如果当前没有语音，异步等待加载后重新朗读
+  if (cachedVoices.length === 0) {
+    waitForVoices(2000).then(voices => {
+      if (voices.length > 0) {
+        const zhVoice = getBestZhVoice();
+        if (zhVoice && !utter.voice) utter.voice = zhVoice;
+      }
+      window.speechSynthesis.speak(utter);
+    });
+    return;
   }
 
   window.speechSynthesis.speak(utter);
@@ -445,21 +497,42 @@ function playPairAudio(audioPath, mnText) {
   });
 }
 
-/** 加载可用语音列表（中文语音） */
+/** 加载可用语音列表（中文语音，优先普通话） */
 function loadVoices() {
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) return;
+  
+  // 更新缓存
+  cachedVoices = voices;
+
   const select = document.getElementById('voiceSelect');
+  // 保留当前选中的值
+  const prevValue = select.value;
   select.innerHTML = '<option value="">默认中文语音</option>';
 
-  // 中文语音（用于口诀朗读）
-  const zhVoices = voices.filter(v => v.lang && v.lang.startsWith('zh'));
+  // 中文语音（用于口诀朗读），按普通话优先排序
+  const zhVoices = voices.filter(v => v.lang && v.lang.startsWith('zh'))
+    .sort((a, b) => {
+      // zh-CN 排最前
+      const aCN = a.lang.startsWith('zh-CN') ? 0 : 1;
+      const bCN = b.lang.startsWith('zh-CN') ? 0 : 1;
+      if (aCN !== bCN) return aCN - bCN;
+      return a.name.localeCompare(b.name);
+    });
+
   zhVoices.forEach(v => {
     const opt = document.createElement('option');
     opt.value = v.name;
-    opt.textContent = `${v.name} (${v.lang})`;
+    const tag = v.lang === 'zh-CN' ? '普通话' : v.lang;
+    opt.textContent = `${v.name} (${tag})`;
     select.appendChild(opt);
   });
+
+  // 恢复之前选中的值
+  if (prevValue && [...select.options].some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  }
 
   // 如果没有中文语音，提示用户
   if (zhVoices.length === 0) {
@@ -471,10 +544,17 @@ function loadVoices() {
   }
 }
 
-// 语音列表可能异步加载
+// 语音列表异步加载：立即获取一次 + 监听变化事件
+// 移动端浏览器通常在首次交互后才加载语音列表
 if ('speechSynthesis' in window) {
+  // 首次同步尝试
+  cachedVoices = window.speechSynthesis.getVoices();
   loadVoices();
-  window.speechSynthesis.onvoiceschanged = loadVoices;
+  // 监听异步加载
+  window.speechSynthesis.onvoiceschanged = function() {
+    cachedVoices = window.speechSynthesis.getVoices();
+    loadVoices();
+  };
 }
 
 // ====== 游戏核心 ======
