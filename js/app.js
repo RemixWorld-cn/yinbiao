@@ -311,6 +311,57 @@ function preloadAudio() {
   });
 }
 
+// ====== 雪梨老师：本地中文音频（zh-audio/ 目录） ======
+
+const zhAudioCache = {};
+
+/** 预加载雪梨老师本地中文音频（按口诀命名） */
+function preloadXueliAudio() {
+  [...VOWEL_DATA, ...CONSONANT_DATA].forEach(item => {
+    if (!item.mn) return;
+    const path = 'zh-audio/' + item.mn + '.mp3';
+    if (!zhAudioCache[path]) {
+      const a = new Audio();
+      a.src = path;
+      a.preload = 'auto';
+      a.addEventListener('error', () => {
+        delete zhAudioCache[path];
+      });
+      a.load();
+      zhAudioCache[path] = a;
+    }
+  });
+}
+
+/**
+ * 播放雪梨老师本地中文音频
+ * 音频不可用时返回 false，由调用方回退到 TTS
+ * @param {string} text - 朗读文本（口诀+后缀 或 纯口诀）
+ * @returns {boolean} true=已用音频播放，false=需回退 TTS
+ */
+function playXueliAudio(text) {
+  // 停止正在播放的 TTS 中文朗读
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  // 提取口诀部分（去掉空格后的后缀）
+  const mn = text.split(' ')[0];
+  const path = 'zh-audio/' + mn + '.mp3';
+
+  const cached = zhAudioCache[path];
+  if (!cached) {
+    return false;
+  }
+
+  const audio = cached.cloneNode();
+  const rate = parseFloat(document.getElementById('speechRate').value);
+  audio.playbackRate = rate;
+
+  audio.play().catch(() => {});
+  return true;
+}
+
 /**
  * 播放音标音频文件（从缓存克隆，秒播）
  * 音频加载失败时，用 TTS 朗读英文示例单词作为回退
@@ -413,6 +464,13 @@ function waitForVoices(maxWait) {
  * @param {string} text - 要朗读的中文文本
  */
 function speakChinese(text) {
+  // 雪梨老师：优先使用本地中文音频（zh-audio/）
+  const voiceName = document.getElementById('voiceSelect').value;
+  if (voiceName === '雪梨老师') {
+    if (playXueliAudio(text)) return;
+    // 音频不可用时回退到 TTS
+  }
+
   if (!('speechSynthesis' in window)) return;
   // 取消正在进行的朗读和音频
   window.speechSynthesis.cancel();
@@ -421,14 +479,12 @@ function speakChinese(text) {
   utter.lang = 'zh-CN';
   utter.rate = parseFloat(document.getElementById('speechRate').value);
 
-  const voiceName = document.getElementById('voiceSelect').value;
-
   // 如果缓存为空，先尝试同步获取
   if (cachedVoices.length === 0) {
     cachedVoices = window.speechSynthesis.getVoices();
   }
 
-  if (voiceName) {
+  if (voiceName && voiceName !== '雪梨老师') {
     const v = cachedVoices.find(v => v.name === voiceName);
     if (v && v.lang && v.lang.startsWith('zh')) {
       utter.voice = v;
@@ -510,6 +566,12 @@ function loadVoices() {
   // 保留当前选中的值
   const prevValue = select.value;
   select.innerHTML = '<option value="">默认中文语音</option>';
+
+  // 第二位：雪梨老师（使用本地中文音频 zh-audio/）
+  const xueliOpt = document.createElement('option');
+  xueliOpt.value = '雪梨老师';
+  xueliOpt.textContent = '雪梨老师';
+  select.appendChild(xueliOpt);
 
   // 中文语音（用于口诀朗读），按普通话优先排序
   const zhVoices = voices.filter(v => v.lang && v.lang.startsWith('zh'))
@@ -1074,4 +1136,5 @@ document.getElementById('downloadImageBtn').addEventListener('click', () => {
 initSettings();       // 初始化设置面板（应用主题色等）
 loadTopBarSettings(); // 恢复顶部设置栏的值
 preloadAudio();       // 预加载音频文件
+preloadXueliAudio();  // 预加载雪梨老师本地中文音频
 loadLevel();
